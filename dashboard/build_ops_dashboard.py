@@ -254,7 +254,9 @@ def load_stage_index():
             DEAD.add(sid)
         if lab == "Closed/Won":  # v5: the terminal won stage is back
             WON_IDS.add(sid); DEAD.discard(sid)
-        if lab == "Cold called assigned":
+        if lab in ("Cold called assigned", "LinkedIn sent"):
+            # two entry points as of the 2026-09-15 restoration: cold-calling
+            # and the LinkedIn branch v5 had briefly removed
             ENTRY_IDS.add(sid)
         if lab in _SEQ:
             ORDER[sid] = _SEQ.index(lab)
@@ -267,9 +269,14 @@ def load_stage_index():
             ORDER[sid] = 0
             UNKNOWN_LABELS.add(lab)
 
-    # Deleted-but-historical stages (v5 dropped the LinkedIn branch): 3,007 deals'
-    # histories still name these ids. Inject label + rank + entry membership so the
-    # pre-v5 series keeps resolving instead of flooding the unknown-label report.
+    # LinkedIn sent/connected are LIVE again (restored 2026-09-15, see
+    # opsdata/restore_linkedin_branch.py) under NEW stage ids -- the live loop
+    # above already picks those up normally. This block only covers the OLD,
+    # now-permanently-gone ids (4080987861 / 4132224744) that v5's brief
+    # removal left behind: ~3,000 deals' stage HISTORY still names them for
+    # the window they were actually deleted, and a deleted stage id can never
+    # reappear in the live pipeline read, so it has to be injected by hand or
+    # every pre-restoration history entry floods the unknown-label report.
     for sid, lab in DELETED_STAGE_LABEL.items():
         STAGE_LABEL.setdefault(sid, lab)
         ORDER.setdefault(sid, _SEQ.index(lab) if lab in _SEQ else 0)

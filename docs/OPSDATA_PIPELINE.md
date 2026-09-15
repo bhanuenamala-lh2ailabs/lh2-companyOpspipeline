@@ -283,3 +283,24 @@ emptied stages).
   never written. Full per-deal audit: `audit/deals_v5_migrate_*.{json,csv}`.
 - **Importer:** OutFlo request-sent AND connected both enter at
   `Cold called assigned`; ladder is `Cold called assigned → Replied` only.
+
+## LinkedIn branch restored (2026-09-15, after v5)
+
+v5's cold-call-only redesign deleted `LinkedIn sent` / `LinkedIn connected`
+after moving their deals to `Cold called assigned`. Restored the same day at
+the user's request: `opsdata/restore_linkedin_branch.py` recreated both
+stages (new stage ids — HubSpot never reuses a deleted stage's id) in their
+original v4 position (`LinkedIn sent → Cold called assigned →
+LinkedIn connected → Replied`), then moved deals back **only where safe**:
+of the 3,007 deals the v5 migration had moved, 2,999 were still sitting
+untouched at `Cold called assigned` and went back to their original stage;
+8 had since progressed to `Replied` and were left exactly there — restoring
+a stage is not a reason to erase real work done after it was removed.
+
+Live pipeline is now 33 stages: the full v5 funnel, unchanged, plus the two
+restored LinkedIn stages as a second entry branch alongside cold-calling.
+`dashboard/build_ops_dashboard.py`'s `ENTRY_IDS` now includes both entry
+points; its `DELETED_STAGE_LABEL` mapping is kept (not removed) because the
+*old*, pre-restoration stage ids are still referenced in deal history from
+the window the branch was actually gone, and a deleted stage id can never
+reappear in a live pipeline read.

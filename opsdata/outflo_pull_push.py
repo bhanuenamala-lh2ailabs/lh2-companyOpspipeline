@@ -27,14 +27,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OWNER_KARTIK = "96316911"
 PIPELINE_LABEL = "Company Ops Data"
 LEAD_SOURCE = "Outflo Outreach ( Startups )"
-# 2026-08-13 bucket fix: OutFlo Leads Processed (request sent) -> Cold LinkedIn
-# Sent; Connected -> LinkedIn Connected. Stage only ever climbs this ladder.
-# v4 (2026-09-08): stages renamed lowercase ('Cold LinkedIn Sent' -> 'LinkedIn sent',
-# 'LinkedIn Connected' -> 'LinkedIn connected'), same stage ids, same ladder logic.
-STAGE_PROCESSED = "LinkedIn sent"
-STAGE_CONNECTED = "LinkedIn connected"
+# v5 (2026-09-15, Ops-Data Supply Funnel PDF): cold-calling is the only
+# outreach method and the funnel has ONE entry. The LinkedIn stages are gone;
+# OutFlo leads (request-sent AND connected alike) enter the call queue at
+# 'Cold called assigned' — outflo_status still records how warm they arrived.
+# A reply still promotes to 'Replied'. Deals a caller has moved to
+# 'No pickup' / 'Callback +1 day' / any dead stage are not in RANK -> skipped.
+STAGE_PROCESSED = "Cold called assigned"
+STAGE_CONNECTED = "Cold called assigned"
 STAGE_REPLIED = "Replied"
-RANK = {STAGE_PROCESSED: 0, STAGE_CONNECTED: 1, STAGE_REPLIED: 2}
+RANK = {STAGE_PROCESSED: 0, STAGE_REPLIED: 1}
 
 def norm_company(name):
     # matching key only, never the stored deal name: OutFlo profiles write the

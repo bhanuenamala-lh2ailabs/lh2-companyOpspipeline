@@ -117,6 +117,32 @@ NOTE_RULES = [
                          r"(asked|requested)[^.]{0,20}?sample)"),
     ("Chase sent", r"(followed up|follow[- ]?up (sent|done)|sent (a )?(message|reminder|nudge)|"
                    r"whats ?app|\bwa\b|pinged|nudged|left a message)"),
+
+    # --- v5 (2026-09-15) cold-call outcome buckets -------------------------------------
+    # Appended LAST on purpose: lowest precedence means no existing bucket can regress.
+    # These cover the call-log vocabulary that arrived with the cold-calling push, and
+    # deals_v5_migrate.py maps them onto the v5 funnel stages (latest note wins there).
+    ("Wrong number",
+        r"(wrong number|invalid (no\b|no\.|number|contact)|"
+        r"(number|no\.?|contact)[^.]{0,12}?(invalid|not valid|wrong)|"
+        r"not a valid number|phone number invalid|"
+        r"no\.? not present|no contact (number|no\.?)( present)?|"
+        r"not found on linkedin)"),
+    ("Company too small",
+        r"(compan(y|ies)[^.]{0,20}?small|less headcount|size too small|"
+        r"(team|headcount)[^.]{0,15}?(small|tiny)|\b2-10 employees)"),
+    ("Pitching own services", r"(started pitching|pitching (his|her|their|its )?own|"
+                              r"pitching (his|her|their) services)"),
+    ("No pickup",
+        r"(did ?n'?o?t pick|didn'?t pick|not picking|no pick ?up|no answer|\brnr\b|"
+        r"ring(ing)? no (reply|response)|switched off|not reachable|unreachable|"
+        r"out of coverage)"),
+    ("Call done", r"^(1st |first )?call( done| attempted| made)?\s*([-.:]|$)"),
+    ("WhatsApp outreach", r"^(wsp|whatsup|whats app)\b"),
+    ("Already engaged", r"already (approached|in touch|contacted|connected)"),
+    ("Invalid lead", r"^invalid( no\.?| number| lead)?\s*$"),
+    ("No data held", r"(does ?n'?t have (any )?data|has no data|no data (to share|available))"),
+    ("First email sent", r"\b(first|1st) e-?mail sent\b"),
 ]
 
 # Buckets that merely restate a stage KPI are dropped by the builder so the same act is never

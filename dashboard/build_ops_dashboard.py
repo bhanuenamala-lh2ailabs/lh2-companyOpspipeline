@@ -143,12 +143,11 @@ METRICS = {
     "onePagerSent":      {"One pager received"},
 
     # --- commercials & close ---
-    # v4 collapses the old sample-evaluation + negotiation stretch into one stage, LOI
-    # signed, and Contract signed is now the closed-won stage itself (no separate
-    # Token/Migration/Payment/Closed-Won tail exists anymore).
+    # v5 (2026-09-15) restores the closing tail: Contract signed is a live stage
+    # again and Closed/Won is the terminal won stage.
     "loiSigned":         {"LOI signed"},
     "contractSigned":    {"Contract signed"},
-    "dealWon":           {"Contract signed"},
+    "dealWon":           {"Closed/Won"},
 }
 
 # Stages the pipeline HAS but the board deliberately does not chart — LinkedIn connected,
@@ -177,24 +176,44 @@ ALIAS = {
 # v4 (2026-09-08): dropped the email branch and the whole sample-evaluation/negotiation/
 # token/migration/payment tail; Contract signed is now the closed-won stage itself. See
 # docs/OPSDATA_PIPELINE.md "v4 restructure".
-_SEQ = ["LinkedIn sent", "Cold called assigned", "LinkedIn connected", "Replied",
+# v5 (2026-09-15): single cold-call entry, call-outcome loop, closing tail restored.
+# The two LinkedIn labels stay listed: their (deleted) stage ids are injected into
+# STAGE_LABEL below so pre-v5 history keeps resolving and ranking.
+_SEQ = ["LinkedIn sent", "Cold called assigned", "LinkedIn connected", "No pickup",
+        "Callback +1 day", "Replied",
         "1st interest sent", "1st interest follow up", "Discovery call", "Call rescheduled",
         "One pager requested", "One pager follow up", "One pager received", "LOI signed",
-        "Contract signed"]
+        "Contract signed", "Ops data handover done", "Payment initiation", "Closed/Won"]
+
+# Stages deleted from the live pipeline whose ids still appear in deal HISTORY
+# (v5 dropped the LinkedIn branch after moving its 3,007 deals to the call queue).
+# The live-pipeline read below can never learn these; inject them so history
+# entries resolve to a label instead of landing in UNKNOWN_LABELS.
+DELETED_STAGE_LABEL = {
+    "4080987861": "LinkedIn sent",
+    "4132224744": "LinkedIn connected",
+}
 
 # A dead stage is not "off the end of the funnel" — it marks the point the deal REACHED, so
 # Dead: One Pager / Less Data means it got a one-pager response in hand. Without this every
 # dead deal sorts last and the Hot Pipeline cannot tell a lead that died cold from one that
 # died holding real progress.
 _DEAD_SEQ = {
-    "Dead: Replied / Not Interested": 3,
-    "Dead: 1st Interest": 5,
-    "Dead: Discovery Call / No Show": 6,
-    "Dead: Discovery Call / Rejected by LH2": 6,
-    "Dead: Discovery Call / Not Interested": 6,
-    "Dead: One Pager / Not Received": 9,
-    "Dead: One Pager / Less Data": 10,
-    "Dead: LOI / Terms Not Agreed": 11,
+    # v5 depths follow the v5 _SEQ indices.
+    "Dead: Cold Call / Wrong Fit": 1,
+    "Dead: Cold Call / Wrong Number": 1,
+    "Dead: Cold Call / Not Interested": 1,
+    "Dead: Cold Call / No Pickup": 3,
+    "Dead: Replied / Not Interested": 5,
+    "Dead: 1st Interest / No Response": 6,
+    "Dead: 1st Interest / Not Interested": 6,
+    "Dead: Discovery Call / No Show": 8,
+    "Dead: Discovery Call / Rejected by LH2": 8,
+    "Dead: Discovery Call / Not Interested": 8,
+    "Dead: One Pager / Not Received": 11,
+    "Dead: One Pager / Low Data Quality": 12,
+    "Dead: LOI / Pricing Not Agreed": 13,
+    "Dead: LOI / Contractual Not Agreed": 13,
     # The email branch closed out at 0 -- died at outreach-sent depth, never replied,
     # same as where 'LinkedIn sent'/'Cold called assigned' sit in _SEQ.
     "Dead: Email Campaign / Branch Retired": 0,
@@ -233,9 +252,9 @@ def load_stage_index():
         meta = st.get("metadata") or {}
         if str(meta.get("isClosed")).lower() == "true":
             DEAD.add(sid)
-        if lab == "Contract signed":  # v4: Contract signed IS the closed-won stage now
+        if lab == "Closed/Won":  # v5: the terminal won stage is back
             WON_IDS.add(sid); DEAD.discard(sid)
-        if lab in ("LinkedIn sent", "Cold called assigned"):
+        if lab == "Cold called assigned":
             ENTRY_IDS.add(sid)
         if lab in _SEQ:
             ORDER[sid] = _SEQ.index(lab)
@@ -247,6 +266,15 @@ def load_stage_index():
             # a month.
             ORDER[sid] = 0
             UNKNOWN_LABELS.add(lab)
+
+    # Deleted-but-historical stages (v5 dropped the LinkedIn branch): 3,007 deals'
+    # histories still name these ids. Inject label + rank + entry membership so the
+    # pre-v5 series keeps resolving instead of flooding the unknown-label report.
+    for sid, lab in DELETED_STAGE_LABEL.items():
+        STAGE_LABEL.setdefault(sid, lab)
+        ORDER.setdefault(sid, _SEQ.index(lab) if lab in _SEQ else 0)
+        if lab == "LinkedIn sent":
+            ENTRY_IDS.add(sid)
 
 
 def metrics_for(label):

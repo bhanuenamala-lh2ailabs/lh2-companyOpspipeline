@@ -252,3 +252,34 @@ by `deals_v4_migrate.py --close-email`; see "v4 restructure" above.
   hand. Building that importer (and deciding what "cold called" means operationally —
   who assigns it, from what source) is separate follow-up work, not part of this
   restructure.
+
+## v5 restructure (2026-09-15) — Ops-Data Supply Funnel
+
+Source of truth: the **Ops-Data Supply Funnel PDF** (cold-calling becomes the
+ONLY outreach method; one funnel entry). Applied by `pipeline_v5_funnel.py` +
+`deals_v5_migrate.py` in the v4 three-step (shape → migrate → shape drops the
+emptied stages).
+
+- **New live:** `No pickup`, `Callback +1 day` (call-outcome loop) and the
+  restored closing tail `Ops data handover done` → `Payment initiation` →
+  `Closed/Won`. `Contract signed` is a live stage again, NOT closed-won.
+- **New dead:** `Dead: Cold Call / Wrong Fit | Wrong Number | Not Interested |
+  No Pickup`, `Dead: 1st Interest / Not Interested`, `Dead: LOI / Pricing Not
+  Agreed`.
+- **Renamed (PATCH, ids kept):** `Dead: 1st Interest` → `… / No Response`,
+  `Dead: One Pager / Less Data` → `… / Low Data Quality`,
+  `Dead: LOI / Terms Not Agreed` → `… / Contractual Not Agreed`.
+- **Deleted:** `LinkedIn sent` (id 4080987861), `LinkedIn connected`
+  (id 4132224744) — after their 3,007 deals moved. Those ids live on in deal
+  history; the dashboard resolves them via `DELETED_STAGE_LABEL` in
+  `build_ops_dashboard.py`.
+- **Kept off-spec:** `Dead: Email Campaign / Branch Retired` (118 deals +
+  history from the v4 email-branch retirement; re-parking dead deals is a
+  business call, not a migration).
+- **Migration was note-driven:** deals in the three pre-outcome stages were
+  placed by their LATEST classifiable note (rules: `dashboard/ops_note_rules.py`,
+  extended with the cold-call vocabulary — wrong number, no pickup, callback,
+  company-too-small…), blanket `Cold called assigned` otherwise. Owners were
+  never written. Full per-deal audit: `audit/deals_v5_migrate_*.{json,csv}`.
+- **Importer:** OutFlo request-sent AND connected both enter at
+  `Cold called assigned`; ladder is `Cold called assigned → Replied` only.

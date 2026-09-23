@@ -33,6 +33,7 @@ TABLE_ID = "cieuZhQTdDCB2sgP"
 CLUSTERS = [("cluster1", "Company Ops Cluster 1 India"), ("cluster2", "Company Ops Cluster 2 India")]
 
 CO_DASHBOARD_ROWS = [
+    ("Cold Lead Assigned", {"Cold called assigned"}, True),
     ("Outreach Sent", {"LinkedIn sent", "Cold called assigned"}, True),
     ("LinkedIn Connected", {"LinkedIn connected"}, False),
     ("No Pickup / Callback", {"No pickup", "Retired: Callback +1 day (use No pickup + task instead)"}, False),
